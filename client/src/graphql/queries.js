@@ -10,3 +10,14 @@ export const GET_BOOK_QUERY = gql`
     }
   }
 `;
+
+export const UPDATE_BOOK_QUERY = gql`
+  mutation ($id: String!, $data: UpdateBookInput!){
+    updateBook(id: $id, data: $data) {
+      id
+      title
+      author
+      isPublished
+    }
+  }
+`;
