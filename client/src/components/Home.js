@@ -28,40 +28,47 @@ function Home() {
     return <li key={dataKey}>{dataKey}: {value}</li>
   });
 
-  const handleSubmit = (event) => {
+  const handleBookSearch = (event) => {
+    event.preventDefault();
+    getBook();
+  }
+
+  const handleBookUpdate = (event) => {
     event.preventDefault();
     updateBook();
     setTitleEntered("");
-    setBookSearched("0");
   }
 
   return (
     <div className="home">
       <div>
-        <h1>Search For Book</h1>
-        <input
-            type="text"
-            placeholder="Enter the id of a book..."
-            onChange={(event) => {
-              if (!event.target.value) setBookSearched("0");
-              else setBookSearched(event.target.value);
-            }}
-        />
-        <button onClick={() => getBook()}>Search</button>
+        <div className="SearchBookForm">
+          <h1>Search For Book</h1>
+          <form onSubmit={handleBookSearch}>
+            <input
+                type="text"
+                placeholder="Enter a book by id ..."
+                onChange={(event) => {
+                  if (event.target.value.trim()) setBookSearched(event.target.value);
+                }}
+            />
+            <button>Search</button>
+          </form>
+        </div>
         <div className="book">
             { data && data.book ?  
               (<div>
                  <hr/>
                  <ul>{elementForData}</ul>
                  <div>
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleBookUpdate}>
                         <input 
-                        type="text"
-                        value={titleEntered}
-                        onChange = {(event) => {
-                            setTitleEntered(event.target.value);
-                        }}
-                        placeholder="Enter updated Title"
+                          type="text"
+                          value={titleEntered}
+                          onChange = {(event) => {
+                              setTitleEntered(event.target.value);
+                          }}
+                          placeholder="Enter updated Title"
                         />
                         <button>Update Book</button>
                     </form>
