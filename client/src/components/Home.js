@@ -3,12 +3,13 @@ import { useLazyQuery, useMutation } from "@apollo/client";
 import { GET_BOOK_QUERY, UPDATE_BOOK_QUERY } from "../graphql/queries";
 import { TextField, Paper, InputBase, Divider, IconButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import CreateIcon from '@mui/icons-material/Create';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from '@mui/material';
 
 export default function Home() {
   const [bookSearched, setBookSearched] = useState("");
-  const [titleEntered, setTitleEntered] = useState("");
   const [foundBooks, setFoundBooks] = useState([]);
+  const [updateFormData, setUpdateFormData] = useState({});
   
   const [getBook, { data: getBookData, error: getBookError }] = useLazyQuery(GET_BOOK_QUERY, {
     variables: { id: bookSearched },
@@ -16,12 +17,13 @@ export default function Home() {
   });
 
   const [updateBook, { data: updateBookData, error: updateBookError }] = useMutation(UPDATE_BOOK_QUERY, {
-    variables: { id: bookSearched, data: { "title": titleEntered }},
+    variables: { id: bookSearched, data: { ...updateFormData }},
   });
 
   if (getBookData) {
     console.log('getBook getBookData:', getBookData);
     console.log('foundBooks: ', foundBooks);
+    console.log('updateFormData:', updateFormData);
   }
   if (updateBookData) {
     console.log('updateBookData:', updateBookData);
@@ -29,8 +31,18 @@ export default function Home() {
 
   useEffect(() => {
     if(getBookData && getBookData.book) {
-        setFoundBooks([getBookData.book]);
-    } else setFoundBooks([]);
+      setFoundBooks([getBookData.book]);
+
+      let validUpdateFormData = Object.assign({}, getBookData.book);
+      // InputType UpdateBookInput does not support Field 'id' and '__typename'
+      // Hence remove them to create valid format of the form data
+      delete validUpdateFormData.id;
+      delete validUpdateFormData.__typename;
+      setUpdateFormData(validUpdateFormData);
+    } else {
+      setFoundBooks([]);
+      setUpdateFormData({});
+    };
 
   }, [getBookData]);
 
@@ -38,17 +50,24 @@ export default function Home() {
     event.preventDefault();
 
     if (bookSearched.trim()) {
-      getBook(); // i.e. getBook() -> getBookData updated -> useEffect() called -> setFoundBooks([getBookData.book]) called
+      getBook(); // i.e. getBook() -> getBookData updated -> useEffect() called -> setFoundBooks and setUpdateFormData called
     }
   }
 
   const handleBookUpdate = (event) => {
     event.preventDefault();
-
-    if (titleEntered.trim()) {
+    if (updateFormData.title.trim() && updateFormData.author.trim()) {
       updateBook();
-      setTitleEntered("");
     }
+  }
+
+  const handleInputChange = (event) => {
+    setUpdateFormData((prevUpdateFormData) => {
+        return {
+            ...prevUpdateFormData,
+            [event.target.name]: event.target.value,
+        }
+    });
   }
 
   if (getBookError) return <div> Error loading the book: {JSON.stringify(getBookError)} </div>;
@@ -102,7 +121,7 @@ export default function Home() {
                     </TableCell>
                     <TableCell align="right">{book.id}</TableCell>
                     <TableCell align="right">{book.author}</TableCell>
-                    <TableCell align="right">{book.isPublished}</TableCell>
+                    <TableCell align="right">{book.isPublished.toString()}</TableCell>
                     <TableCell align="right">{book.__typename}</TableCell>
                     </TableRow>
                 ))}
@@ -115,14 +134,26 @@ export default function Home() {
             <form onSubmit={handleBookUpdate}>
                 <TextField 
                   id="standard-basic" 
-                  label="Update Book Title"
+                  label="Update Title"
                   variant="standard" 
 
-                  value={titleEntered}
-                  onChange = {(event) => {
-                    setTitleEntered(event.target.value);
-                  }}
+                  name="title"
+                  value={updateFormData.title}
+                  onChange={handleInputChange}
                 />
+                <Divider />
+                <TextField 
+                  id="standard-basic" 
+                  label="Update Author"
+                  variant="standard" 
+
+                  name="author"
+                  value={updateFormData.author}
+                  onChange={handleInputChange}
+                />
+                <IconButton color="primary" sx={{ p: '10px' }} aria-label="directions" type="submit">
+                    <CreateIcon />
+                </IconButton>
             </form>
         </div>
       }
