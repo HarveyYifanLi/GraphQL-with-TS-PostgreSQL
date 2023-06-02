@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useLazyQuery, useMutation } from "@apollo/client";
-import { GET_BOOK_QUERY, UPDATE_BOOK_QUERY } from "../graphql/queries";
+import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
+import { GET_BOOK_QUERY, UPDATE_BOOK_QUERY, GET_BOOKS_QUERY } from "../graphql/queries";
 import { TextField, Paper, InputBase, Divider, IconButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CreateIcon from '@mui/icons-material/Create';
@@ -10,9 +10,12 @@ export default function Home() {
   const [bookSearched, setBookSearched] = useState("");
   const [foundBooks, setFoundBooks] = useState([]);
   const [updateFormData, setUpdateFormData] = useState({});
-  
+  // get all Books data via useQuery in a similar flow to componentDidMount
+  const {data: getBooksData, error: getBooksError} = useQuery(GET_BOOKS_QUERY);
+
   const [getBook, { data: getBookData, error: getBookError }] = useLazyQuery(GET_BOOK_QUERY, {
-    variables: { id: bookSearched },
+    variables: { id: bookSearched || "0" },
+    fetchPolicy: 'network-only', // Used for first execution
     nextFetchPolicy: 'network-only',
   });
 
@@ -20,6 +23,9 @@ export default function Home() {
     variables: { id: bookSearched, data: { ...updateFormData }},
   });
 
+  if (getBooksData) {
+    console.log('getBooksData: ', getBooksData);
+  }
   if (getBookData) {
     console.log('getBook getBookData:', getBookData);
     console.log('foundBooks: ', foundBooks);
@@ -28,6 +34,14 @@ export default function Home() {
   if (updateBookData) {
     console.log('updateBookData:', updateBookData);
   }
+
+  useEffect(() => {
+    if(getBooksData && getBooksData.books) {
+      setFoundBooks(getBooksData.books);
+    } else {
+      setFoundBooks([]);
+    };
+  }, [getBooksData]);
 
   useEffect(() => {
     if(getBookData && getBookData.book) {
@@ -70,6 +84,7 @@ export default function Home() {
     });
   }
 
+  if (getBooksError) return <div> Error loading books: {JSON.stringify(getBooksError)} </div>;
   if (getBookError) return <div> Error loading the book: {JSON.stringify(getBookError)} </div>;
   if (updateBookError) return <div> Error updating the book: {JSON.stringify(updateBookError)} </div>;
 

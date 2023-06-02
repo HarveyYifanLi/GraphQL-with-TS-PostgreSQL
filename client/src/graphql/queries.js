@@ -21,3 +21,14 @@ export const UPDATE_BOOK_QUERY = gql`
     }
   }
 `;
+
+export const GET_BOOKS_QUERY = gql`
+  query getAllBooks {
+    books {
+      id
+      title
+      author
+      isPublished
+    }
+  }
+`;
